@@ -1,3 +1,4 @@
+require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
 const routes = require('./routes');
@@ -10,12 +11,14 @@ const app = express();
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY', 'X-CART-ID']
 }));
 app.set('trust proxy', true);
+
+// Swagger docs with dynamic server url
 app.use('/docs', swaggerUi.serve, (req, res, next) => {
   const host = req.get('host');           // may or may not include port
-  let protocol = req.protocol;          // http or https
+  let protocol = req.protocol;            // http or https
 
   const actualPort = req.socket.localPort;
   const hasPort = host.includes(':');
@@ -32,24 +35,26 @@ app.use('/docs', swaggerUi.serve, (req, res, next) => {
     servers: [
       {
         url: `${protocol}://${fullHost}`,
-      },
+        description: 'Dynamic server'
+      }
     ],
   };
-  swaggerUi.setup(dynamicSpec)(req, res, next);
+  swaggerUi.setup(dynamicSpec, { explorer: true })(req, res, next);
 });
 
 // Parse JSON request body
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // Mount routes
 app.use('/', routes);
 
-// Error handling middleware
+ // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({
+  const status = err.status || 500;
+  res.status(status).json({
     status: 'error',
-    message: 'Internal Server Error',
+    message: err.message || 'Internal Server Error',
   });
 });
 

@@ -1,11 +1,20 @@
 const app = require('./app');
+const { runMigrationsIfEnabled } = require('./utils/migrate');
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Server running at http://${HOST}:${PORT}`);
-});
+(async () => {
+  try {
+    await runMigrationsIfEnabled();
+  } catch (err) {
+    console.error('Database migration failed:', err);
+    process.exit(1);
+  }
+
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`Server running at http://${HOST}:${PORT}`);
+  });
 
   // Graceful shutdown
   process.on('SIGTERM', () => {
@@ -16,4 +25,5 @@ const server = app.listen(PORT, HOST, () => {
     });
   });
 
-module.exports = server;
+  module.exports = server;
+})();
