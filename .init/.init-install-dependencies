@@ -1,0 +1,4 @@
+{
+    "command": "npm install",
+    "working_directory": "/home/kavia/workspace/code-generation/online-grocery-mart-19003-19046/CartManagementService"
+}
